@@ -8,6 +8,14 @@ import streamlit as st
 DATA_FILE = Path(__file__).parent / "data" / "games.json"
 STAT_COLS = ["AB", "1B", "2B", "3B", "HR_OTF", "HR_ITP", "R", "RBI", "K"]
 
+HEADER_LABELS = {
+    "player": "Player", "G": "G", "AB": "AB", "H": "H",
+    "1B": "1B", "2B": "2B", "3B": "3B", "HR": "HR",
+    "HR_OTF": "OTF", "HR_ITP": "ITP",
+    "R": "R", "RBI": "RBI", "K": "K",
+    "AVG": "AVG", "OBP": "OBP", "SLG": "SLG", "OPS": "OPS",
+}
+
 st.set_page_config(page_title="Outlaws Stats", page_icon="🤠", layout="wide")
 
 CSS = """
@@ -35,6 +43,34 @@ CSS = """
 }
 .badge.red { background: rgba(220,80,80,0.18); color: #ff8a8a; border-color: rgba(220,80,80,0.4); }
 .badge.green { background: rgba(80,200,120,0.18); color: #8ee8a8; border-color: rgba(80,200,120,0.4); }
+
+/* KPI grid — 5 cols desktop, 2 cols mobile */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin: 8px 0 20px 0;
+}
+@media (max-width: 760px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.kpi-card {
+  border: 1px solid rgba(150,150,170,0.18);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.02);
+}
+.kpi-card .label {
+  font-size: 11px; opacity: 0.65;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  font-weight: 700;
+}
+.kpi-card .value {
+  font-size: 26px; font-weight: 800;
+  margin-top: 4px; line-height: 1.1;
+}
+.kpi-card .hint { font-size: 11px; opacity: 0.55; margin-top: 4px; }
+
 .leader-card {
   border: 1px solid rgba(150,150,170,0.18);
   border-radius: 12px; padding: 16px 18px;
@@ -58,6 +94,7 @@ CSS = """
 .leader-row.r3 .rank { color: #cd7f32; }
 .leader-row .name { flex: 1; font-weight: 500; }
 .leader-row .val { font-family: ui-monospace, "SF Mono", Consolas, monospace; opacity: 0.95; font-weight: 600; }
+
 .recap {
   border-left: 4px solid #d4af37;
   background: rgba(212,175,55,0.06);
@@ -66,6 +103,7 @@ CSS = """
 .recap .title { font-size: 13px; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
 .recap .score { font-size: 22px; font-weight: 800; margin: 4px 0; }
 .recap .star { font-size: 14px; opacity: 0.9; }
+
 .hr-dot {
   display: inline-block; width: 18px; height: 18px;
   border-radius: 50%; margin-right: 5px; vertical-align: middle;
@@ -89,6 +127,107 @@ CSS = """
   margin-top: 14px; padding-top: 12px;
   border-top: 1px solid rgba(150,150,170,0.18);
   font-size: 14px; opacity: 0.85;
+}
+
+/* Stats table — sticky player column, centered values, color grades */
+.stats-table-wrap {
+  max-width: 1100px;
+  margin: 8px auto 8px auto;
+  overflow-x: auto;
+  border: 1px solid rgba(150,150,170,0.18);
+  border-radius: 10px;
+  background: #0e1117;
+}
+.stats-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 14px;
+  color: #fafafa;
+}
+.stats-table th, .stats-table td {
+  padding: 10px 14px;
+  text-align: center;
+  border-bottom: 1px solid rgba(150,150,170,0.10);
+  white-space: nowrap;
+}
+.stats-table tbody tr:last-child td { border-bottom: none; }
+.stats-table th {
+  font-weight: 700; font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  background: #161922;
+  position: sticky; top: 0; z-index: 1;
+}
+.stats-table td.player-cell {
+  text-align: left;
+  font-weight: 600;
+  position: sticky; left: 0;
+  background: #0e1117;
+  z-index: 2;
+  border-right: 1px solid rgba(150,150,170,0.18);
+}
+.stats-table th.player-th {
+  text-align: left;
+  position: sticky; left: 0; top: 0;
+  background: #161922;
+  z-index: 3;
+  border-right: 1px solid rgba(150,150,170,0.18);
+}
+
+/* Player vs Player comparison */
+.cmp-wrap { max-width: 720px; margin: 0 auto; }
+.cmp-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 1fr;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 2px solid rgba(150,150,170,0.22);
+  margin-bottom: 6px;
+}
+.cmp-name {
+  font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+}
+.cmp-name.left { text-align: right; padding-right: 12px; }
+.cmp-name.right { text-align: left; padding-left: 12px; }
+.cmp-header .vs {
+  text-align: center; font-size: 13px; font-weight: 700;
+  opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;
+}
+.cmp-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 1fr;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(150,150,170,0.08);
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-val {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 18px; font-weight: 500; opacity: 0.55;
+}
+.cmp-val.left { text-align: right; padding-right: 14px; }
+.cmp-val.right { text-align: left; padding-left: 14px; }
+.cmp-val.winner { color: #f4d774; font-weight: 800; opacity: 1; }
+.cmp-val.tie { opacity: 0.85; }
+.cmp-stat {
+  text-align: center; font-size: 11px; font-weight: 600;
+  opacity: 0.7; text-transform: uppercase; letter-spacing: 1px;
+}
+.cmp-tally {
+  text-align: center; margin-top: 16px; padding-top: 14px;
+  border-top: 2px solid rgba(150,150,170,0.22);
+  font-size: 14px; opacity: 0.9;
+}
+@media (max-width: 600px) {
+  .cmp-header { grid-template-columns: 1fr 60px 1fr; }
+  .cmp-name { font-size: 19px; }
+  .cmp-row { grid-template-columns: 1fr 100px 1fr; padding: 9px 0; }
+  .cmp-val { font-size: 15px; }
+  .cmp-val.left { padding-right: 8px; }
+  .cmp-val.right { padding-left: 8px; }
+  .cmp-stat { font-size: 9.5px; letter-spacing: 0.5px; }
 }
 </style>
 """
@@ -119,7 +258,7 @@ def add_derived(df: pd.DataFrame) -> pd.DataFrame:
     df["XBH"] = df["2B"] + df["3B"] + df["HR"]
     df["TB"] = df["1B"] + 2 * df["2B"] + 3 * df["3B"] + 4 * df["HR"]
     df["AVG"] = (df["H"] / df["AB"]).where(df["AB"] > 0, 0).round(3)
-    df["OBP"] = df["AVG"]  # walks count as hits in this league
+    df["OBP"] = df["AVG"]
     df["SLG"] = (df["TB"] / df["AB"]).where(df["AB"] > 0, 0).round(3)
     df["OPS"] = (df["OBP"] + df["SLG"]).round(3)
     return df
@@ -145,6 +284,55 @@ def leader_html(title: str, df: pd.DataFrame, col: str, fmt: str = "{:.3f}", n: 
                 f'</div>'
             )
     return f'<div class="leader-card"><h4>{title}</h4>{rows}</div>'
+
+
+def make_color_fn(series: pd.Series, rgb: tuple[int, int, int]):
+    vmin, vmax = series.min(), series.max()
+    if vmin == vmax:
+        return lambda _v: ""
+    r, g, b = rgb
+
+    def f(v):
+        norm = (v - vmin) / (vmax - vmin)
+        alpha = 0.10 + 0.50 * float(norm)
+        return f"background-color: rgba({r},{g},{b},{alpha:.2f})"
+    return f
+
+
+def render_stats_table(table: pd.DataFrame) -> None:
+    rate_cols = {"AVG", "OBP", "SLG", "OPS"}
+    color_funcs = {
+        "OPS": make_color_fn(table["OPS"], (212, 175, 55)),
+        "HR": make_color_fn(table["HR"], (80, 180, 110)),
+        "RBI": make_color_fn(table["RBI"], (80, 180, 110)),
+        "R": make_color_fn(table["R"], (80, 180, 110)),
+    }
+    headers = []
+    for c in table.columns:
+        cls = "player-th" if c == "player" else ""
+        headers.append(f'<th class="{cls}">{HEADER_LABELS.get(c, c)}</th>')
+    body = []
+    for _, row in table.iterrows():
+        cells = []
+        for c in table.columns:
+            v = row[c]
+            if c == "player":
+                cells.append(f'<td class="player-cell">{v}</td>')
+                continue
+            bg = color_funcs[c](v) if c in color_funcs else ""
+            text = f"{v:.3f}" if c in rate_cols else f"{int(v)}"
+            style_attr = f' style="{bg}"' if bg else ""
+            cells.append(f"<td{style_attr}>{text}</td>")
+        body.append(f'<tr>{"".join(cells)}</tr>')
+    html = (
+        '<div class="stats-table-wrap">'
+        '<table class="stats-table">'
+        f'<thead><tr>{"".join(headers)}</tr></thead>'
+        f'<tbody>{"".join(body)}</tbody>'
+        "</table>"
+        "</div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 # --- Load --------------------------------------------------------------------
@@ -250,59 +438,82 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- KPI strip ---------------------------------------------------------------
+# --- KPI grid (responsive: 5 cols desktop, 2 cols mobile) --------------------
 team_h = int(totals["H"].sum())
 team_ab = int(totals["AB"].sum())
 team_avg = round(team_h / team_ab, 3) if team_ab else 0
 team_tb = int(totals["TB"].sum())
 team_slg = round(team_tb / team_ab, 3) if team_ab else 0
 team_ops = round(team_avg + team_slg, 3)
+team_hr = int(totals["HR"].sum())
+team_otf = int(totals["HR_OTF"].sum())
+team_itp = int(totals["HR_ITP"].sum())
 gp = len(games)
-k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("Runs / Game", f"{rf/gp:.1f}")
-k2.metric("Team AVG", f"{team_avg:.3f}")
-k3.metric("Team OPS", f"{team_ops:.3f}")
-k4.metric("Team HRs", int(totals["HR"].sum()),
-          help=f"{int(totals['HR_OTF'].sum())} over the fence · {int(totals['HR_ITP'].sum())} inside the park")
-k5.metric("Total Hits", team_h)
 
-st.write("")
+kpi_html = (
+    '<div class="kpi-grid">'
+    f'<div class="kpi-card"><div class="label">Runs / Game</div>'
+    f'<div class="value">{rf/gp:.1f}</div></div>'
+    f'<div class="kpi-card"><div class="label">Team AVG</div>'
+    f'<div class="value">{team_avg:.3f}</div></div>'
+    f'<div class="kpi-card"><div class="label">Team OPS</div>'
+    f'<div class="value">{team_ops:.3f}</div></div>'
+    f'<div class="kpi-card"><div class="label">Team HRs</div>'
+    f'<div class="value">{team_hr}</div>'
+    f'<div class="hint">{team_otf} OTF · {team_itp} ITP</div></div>'
+    f'<div class="kpi-card"><div class="label">Total Hits</div>'
+    f'<div class="value">{team_h}</div></div>'
+    '</div>'
+)
+st.markdown(kpi_html, unsafe_allow_html=True)
 
 # --- Tabs --------------------------------------------------------------------
-tab_overview, tab_leaders, tab_table, tab_log = st.tabs(
-    ["📈 Overview", "🏆 Leaders", "📊 Stats Table", "🗓️ Game Log"]
+tab_overview, tab_leaders, tab_compare, tab_table, tab_log = st.tabs(
+    ["📈 Overview", "🏆 Leaders", "⚔️ Compare", "📊 Stats Table", "🗓️ Game Log"]
 )
 
 with tab_overview:
     left, right = st.columns([1.2, 1])
 
     with left:
-        st.markdown("##### Runs scored vs allowed by game")
-        game_summary = pd.DataFrame([{
-            "Game": f"G{g['game_id']}",
-            "Opponent": g["opponent"],
-            "Result": g["result"],
-            "For": g["team_runs"],
-            "Against": g["opp_runs"],
-        } for g in games])
-        long = game_summary.melt(id_vars=["Game", "Opponent", "Result"],
-                                 value_vars=["For", "Against"],
-                                 var_name="Side", value_name="Runs")
-        chart = (
-            alt.Chart(long)
+        st.markdown("##### Team hit mix")
+        hit_mix = pd.DataFrame([
+            {"Type": "Singles",   "Count": int(totals["1B"].sum())},
+            {"Type": "Doubles",   "Count": int(totals["2B"].sum())},
+            {"Type": "Triples",   "Count": int(totals["3B"].sum())},
+            {"Type": "Home Runs", "Count": int(totals["HR"].sum())},
+        ])
+        total_hits = hit_mix["Count"].sum()
+        if total_hits > 0:
+            hit_mix["Pct"] = (hit_mix["Count"] / total_hits * 100).round(1)
+        else:
+            hit_mix["Pct"] = 0.0
+        mix_chart = (
+            alt.Chart(hit_mix)
             .mark_bar()
             .encode(
-                x=alt.X("Game:N", sort=None, title=None),
-                xOffset=alt.XOffset("Side:N"),
-                y=alt.Y("Runs:Q"),
-                color=alt.Color("Side:N",
-                                scale=alt.Scale(domain=["For", "Against"], range=["#c8102e", "#1d3a6e"]),
-                                legend=alt.Legend(orient="top", title=None)),
-                tooltip=["Game", "Opponent", "Side", "Runs"],
+                x=alt.X("Type:N", sort=["Singles", "Doubles", "Triples", "Home Runs"],
+                        title=None, axis=alt.Axis(labelAngle=0)),
+                y=alt.Y("Count:Q", title="Hits"),
+                color=alt.Color(
+                    "Type:N",
+                    scale=alt.Scale(
+                        domain=["Singles", "Doubles", "Triples", "Home Runs"],
+                        range=["#1d3a6e", "#3b6ea5", "#e58a30", "#c8102e"],
+                    ),
+                    legend=None,
+                ),
+                tooltip=[
+                    alt.Tooltip("Type:N"),
+                    alt.Tooltip("Count:Q"),
+                    alt.Tooltip("Pct:Q", format=".1f", title="% of hits"),
+                ],
             )
             .properties(height=260)
         )
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(mix_chart, use_container_width=True)
+        st.caption(f"{total_hits} team hits · "
+                   + " · ".join(f'{r["Type"]} {int(r["Count"])}' for _, r in hit_mix.iterrows()))
 
     with right:
         st.markdown("##### Top 8 by OPS")
@@ -316,8 +527,16 @@ with tab_overview:
                 .mark_bar(color="#c8102e")
                 .encode(
                     y=alt.Y("player:N", sort="-x", title=None),
-                    x=alt.X("OPS:Q"),
-                    tooltip=["player", "AB", "H", "HR", "AVG", "SLG", "OPS"],
+                    x=alt.X("OPS:Q", axis=alt.Axis(format=".3f")),
+                    tooltip=[
+                        "player",
+                        "AB",
+                        "H",
+                        "HR",
+                        alt.Tooltip("AVG:Q", format=".3f"),
+                        alt.Tooltip("SLG:Q", format=".3f"),
+                        alt.Tooltip("OPS:Q", format=".3f"),
+                    ],
                 )
                 .properties(height=260)
             )
@@ -350,12 +569,12 @@ with tab_overview:
                 f'<span class="hr-count">{total} HR</span>'
                 f'</div>'
             )
-        team_otf = int(hr_df["HR_OTF"].sum())
-        team_itp = int(hr_df["HR_ITP"].sum())
+        team_otf_total = int(hr_df["HR_OTF"].sum())
+        team_itp_total = int(hr_df["HR_ITP"].sum())
         footer = (
             f'<div class="hr-footer">'
-            f'Team total: <b>{team_otf + team_itp} HR</b> &nbsp;·&nbsp; '
-            f'{team_otf} over the fence &nbsp;·&nbsp; {team_itp} inside the park'
+            f'Team total: <b>{team_otf_total + team_itp_total} HR</b> &nbsp;·&nbsp; '
+            f'{team_otf_total} over the fence &nbsp;·&nbsp; {team_itp_total} inside the park'
             f'</div>'
         )
         st.markdown(legend + rows_html + footer, unsafe_allow_html=True)
@@ -385,44 +604,92 @@ with tab_leaders:
     row4[0].markdown(leader_html("⭐ Player of the Game honors", pog_df, "POG", "{:.0f}"),
                      unsafe_allow_html=True)
 
-def color_scale(series: pd.Series, rgb: tuple[int, int, int]) -> list[str]:
-    """Lightweight stand-in for Styler.background_gradient (no matplotlib needed)."""
-    vmax, vmin = series.max(), series.min()
-    if pd.isna(vmax) or vmax == vmin:
-        return ["" for _ in series]
-    r, g, b = rgb
-    out = []
-    for v in series:
-        if pd.isna(v):
-            out.append("")
-            continue
-        norm = (v - vmin) / (vmax - vmin)
-        alpha = 0.10 + 0.50 * norm
-        out.append(f"background-color: rgba({r},{g},{b},{alpha:.2f})")
-    return out
+with tab_compare:
+    players_list = sorted(totals["player"].unique().tolist())
+    if len(players_list) < 2:
+        st.info("Need at least 2 players to compare.")
+    else:
+        col_a, col_b = st.columns(2)
+        with col_a:
+            p1 = st.selectbox("Player A", players_list, index=0, key="cmp_p1")
+        with col_b:
+            default_b = 1 if len(players_list) > 1 else 0
+            p2 = st.selectbox("Player B", players_list, index=default_b, key="cmp_p2")
 
+        if p1 == p2:
+            st.warning("Pick two different players to compare.")
+        else:
+            r1 = totals[totals["player"] == p1].iloc[0]
+            r2 = totals[totals["player"] == p2].iloc[0]
+
+            # (stat, label, fmt, direction)  — direction "high" = higher is better
+            compare_specs = [
+                ("G",   "Games",            "{:.0f}", "high"),
+                ("AB",  "At-Bats",          "{:.0f}", "high"),
+                ("H",   "Hits",             "{:.0f}", "high"),
+                ("AVG", "Batting Avg",      "{:.3f}", "high"),
+                ("OBP", "On-base %",        "{:.3f}", "high"),
+                ("SLG", "Slugging",         "{:.3f}", "high"),
+                ("OPS", "OPS",              "{:.3f}", "high"),
+                ("HR",  "Home Runs",        "{:.0f}", "high"),
+                ("XBH", "Extra-Base Hits",  "{:.0f}", "high"),
+                ("R",   "Runs Scored",      "{:.0f}", "high"),
+                ("RBI", "RBIs",             "{:.0f}", "high"),
+                ("K",   "Strikeouts",       "{:.0f}", "low"),
+            ]
+
+            left_wins = right_wins = ties_count = 0
+            rows_html = ""
+            for stat, label, fmt, direction in compare_specs:
+                v1, v2 = r1[stat], r2[stat]
+                if direction == "high":
+                    if v1 > v2: winner = "left"
+                    elif v2 > v1: winner = "right"
+                    else: winner = "tie"
+                else:
+                    if v1 < v2: winner = "left"
+                    elif v2 < v1: winner = "right"
+                    else: winner = "tie"
+                if winner == "left":
+                    left_wins += 1
+                    lc, rc = "winner", ""
+                elif winner == "right":
+                    right_wins += 1
+                    lc, rc = "", "winner"
+                else:
+                    ties_count += 1
+                    lc = rc = "tie"
+                rows_html += (
+                    f'<div class="cmp-row">'
+                    f'<div class="cmp-val left {lc}">{fmt.format(v1)}</div>'
+                    f'<div class="cmp-stat">{label}</div>'
+                    f'<div class="cmp-val right {rc}">{fmt.format(v2)}</div>'
+                    f'</div>'
+                )
+
+            header = (
+                f'<div class="cmp-header">'
+                f'<div class="cmp-name left">{p1}</div>'
+                f'<div class="vs">vs</div>'
+                f'<div class="cmp-name right">{p2}</div>'
+                f'</div>'
+            )
+            tally = (
+                f'<div class="cmp-tally">'
+                f'<b>{p1}</b> leads in <b>{left_wins}</b> &nbsp;·&nbsp; '
+                f'<b>{p2}</b> leads in <b>{right_wins}</b> &nbsp;·&nbsp; '
+                f'Tied in <b>{ties_count}</b>'
+                f'</div>'
+            )
+            st.markdown('<div class="cmp-wrap">' + header + rows_html + tally + '</div>',
+                        unsafe_allow_html=True)
 
 with tab_table:
-    _left_margin, center, _right_margin = st.columns([1, 4, 1])
-    with center:
-        sort_by = st.selectbox("Sort by", ["OPS", "AVG", "HR", "RBI", "R", "H", "TB", "AB"], index=0)
-        cols = ["player", "G", "AB", "H", "1B", "2B", "3B", "HR", "HR_OTF", "HR_ITP",
-                "R", "RBI", "K", "AVG", "OBP", "SLG", "OPS"]
-        table = totals[cols].sort_values(sort_by, ascending=False).reset_index(drop=True)
-        rate_cols = ["AVG", "OBP", "SLG", "OPS"]
-        int_cols = [c for c in cols if c not in rate_cols + ["player"]]
-        styled = (
-            table.style
-            .format({c: "{:.3f}" for c in rate_cols} | {c: "{:.0f}" for c in int_cols})
-            .set_properties(**{"text-align": "center"})
-            .set_properties(subset=["player"], **{"text-align": "left", "font-weight": "600"})
-            .set_table_styles([{"selector": "th", "props": [("text-align", "center")]}])
-            .apply(color_scale, rgb=(212, 175, 55), subset=["OPS"])
-            .apply(color_scale, rgb=(80, 180, 110), subset=["HR"])
-            .apply(color_scale, rgb=(80, 180, 110), subset=["RBI"])
-            .apply(color_scale, rgb=(80, 180, 110), subset=["R"])
-        )
-        st.dataframe(styled, use_container_width=True, hide_index=True)
+    sort_by = st.selectbox("Sort by", ["OPS", "AVG", "HR", "RBI", "R", "H", "TB", "AB"], index=0)
+    cols = ["player", "G", "AB", "H", "1B", "2B", "3B", "HR", "HR_OTF", "HR_ITP",
+            "R", "RBI", "K", "AVG", "OBP", "SLG", "OPS"]
+    table = totals[cols].sort_values(sort_by, ascending=False).reset_index(drop=True)
+    render_stats_table(table)
 
 with tab_log:
     glog = pd.DataFrame([{
