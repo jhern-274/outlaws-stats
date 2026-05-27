@@ -1,0 +1,34 @@
+{
+  "team_name": "Outlaws",
+  "season": "2026",
+  "regular_season_games": 7,
+  "notes": "League rule: a walk is recorded as a hit (so no BB column). HRs are split into over-the-fence (HR_OTF) and inside-the-park (HR_ITP).",
+  "games": [
+    {
+      "game_id": 1,
+      "date": "2026-05-26",
+      "opponent": "Swingers Club",
+      "result": "W",
+      "team_runs": 12,
+      "opp_runs": 6,
+      "type": "regular",
+      "players_of_game": [
+        { "player": "Adrien", "reason": "Defense" },
+        { "player": "Jimmy",  "reason": "Power" },
+        { "player": "Gabe",   "reason": "Pitching" }
+      ],
+      "stats": [
+        { "player": "Adrien",  "AB": 4, "1B": 2, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 1, "R": 1, "RBI": 2, "K": 0 },
+        { "player": "Jose Hat", "AB": 4, "1B": 3, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 3, "RBI": 0, "K": 0 },
+        { "player": "Jimmy",   "AB": 4, "1B": 1, "2B": 0, "3B": 0, "HR_OTF": 2, "HR_ITP": 0, "R": 3, "RBI": 4, "K": 0 },
+        { "player": "Mohawke", "AB": 4, "1B": 3, "2B": 1, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 2, "RBI": 0, "K": 0 },
+        { "player": "Danny",   "AB": 4, "1B": 4, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 1, "RBI": 1, "K": 0 },
+        { "player": "Pilo",    "AB": 4, "1B": 1, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 0, "RBI": 1, "K": 0 },
+        { "player": "Alex",    "AB": 4, "1B": 2, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 1, "RBI": 2, "K": 0 },
+        { "player": "Los",     "AB": 4, "1B": 1, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 0, "RBI": 0, "K": 0 },
+        { "player": "Gerry",   "AB": 3, "1B": 1, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 0, "R": 0, "RBI": 0, "K": 0 },
+        { "player": "Gabe",    "AB": 3, "1B": 1, "2B": 0, "3B": 0, "HR_OTF": 0, "HR_ITP": 1, "R": 1, "RBI": 1, "K": 0 }
+      ]
+    }
+  ]
+}
